@@ -1,5 +1,5 @@
 {
-  "name": "assistants-api-middleware",
+  "name": "open-assistants-api",
   "version": "0.1.0",
   "private": true,
   "type": "module",

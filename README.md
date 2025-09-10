@@ -1,4 +1,4 @@
-## Assistants API Middleware (Responses-backed)
+## Open Assistants API (Responses-backed)
 
 Fastify + TypeScript server that exposes a minimal Assistants API facade while invoking the newer Responses API. Designed to ease migration: keep your Assistants-shaped client calls, switch the backend to Responses.
 
@@ -27,16 +27,16 @@ npm run dev  # http://localhost:3000
 ### Docker
 Build locally:
 ```bash
-docker build -t assistants-api-middleware:local .
+docker build -t open-assistants-api:local .
 docker run --rm -p 3000:3000 \
   -e OPENAI_API_KEY=sk-... \
   -e REDIS_URL=redis://host.docker.internal:6379 \
-  assistants-api-middleware:local
+  open-assistants-api:local
 ```
 
 Images are published to GHCR on release:
-- `ghcr.io/<org-or-user>/assistants-api-middleware:latest`
-- `ghcr.io/<org-or-user>/assistants-api-middleware:<version>`
+- `ghcr.io/<org-or-user>/open-assistants-api:latest`
+- `ghcr.io/<org-or-user>/open-assistants-api:<version>`
 
 GitHub Releases also attach an `linux-amd64` image tar for offline use.
 

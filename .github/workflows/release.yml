@@ -42,17 +42,17 @@ jobs:
           push: true
           platforms: linux/amd64,linux/arm64
           tags: |
-            ghcr.io/${{ github.repository_owner }}/assistants-api-middleware:latest
-            ghcr.io/${{ github.repository_owner }}/assistants-api-middleware:${{ steps.meta.outputs.version }}
+            ghcr.io/${{ github.repository_owner }}/open-assistants-api:latest
+            ghcr.io/${{ github.repository_owner }}/open-assistants-api:${{ steps.meta.outputs.version }}
 
       - name: Build amd64 image tar
         run: |
-          docker buildx build --platform linux/amd64 -t ghcr.io/${{ github.repository_owner }}/assistants-api-middleware:${{ steps.meta.outputs.version }} --output type=docker,dest=assistants-api-middleware_${{ steps.meta.outputs.version }}_linux-amd64.tar .
+          docker buildx build --platform linux/amd64 -t ghcr.io/${{ github.repository_owner }}/open-assistants-api:${{ steps.meta.outputs.version }} --output type=docker,dest=open-assistants-api_${{ steps.meta.outputs.version }}_linux-amd64.tar .
 
       - name: Upload image tar to release
         uses: softprops/action-gh-release@v2
         with:
-          files: assistants-api-middleware_${{ steps.meta.outputs.version }}_linux-amd64.tar
+          files: open-assistants-api_${{ steps.meta.outputs.version }}_linux-amd64.tar
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
