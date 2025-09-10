@@ -222,4 +222,4 @@ Tests include:
 - HTTP integration test booting Fastify via `buildApp()`
 
 ### License
-MIT (add a `LICENSE` file if publishing publicly)
+MIT
