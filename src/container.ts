@@ -1,4 +1,4 @@
-import { RandomIdGenerator, InMemoryAssistantsRepo, InMemoryThreadsRepo, InMemoryMessagesRepo, InMemoryRunsRepo } from './infra/memoryRepos.js';
+import { UuidIdGenerator } from './infra/idGenerator.js';
 import { OpenAIResponsesClient } from './infra/openaiResponsesClient.js';
 import { FakeResponsesClient } from './infra/fakeResponsesClient.js';
 import { AssistantsService, ThreadsService, RunsService } from './application/services.js';
@@ -6,16 +6,15 @@ import { RedisAssistantsRepo, RedisThreadsRepo, RedisMessagesRepo, RedisRunsRepo
 
 /**
  * Compose and provide application dependencies for runtime and tests.
- * Uses Redis repositories when REDIS_URL is set, otherwise in-memory.
+ * Uses Redis repositories exclusively (in-memory support removed).
  */
 export function buildContainer() {
-  const ids = new RandomIdGenerator();
+  const ids = new UuidIdGenerator();
 
-  const useRedis = Boolean(process.env.REDIS_URL);
-  const assistantsRepo = useRedis ? new RedisAssistantsRepo(ids) : new InMemoryAssistantsRepo(ids);
-  const threadsRepo = useRedis ? new RedisThreadsRepo(ids) : new InMemoryThreadsRepo(ids);
-  const messagesRepo = useRedis ? new RedisMessagesRepo(ids) : new InMemoryMessagesRepo(ids);
-  const runsRepo = useRedis ? new RedisRunsRepo(ids) : new InMemoryRunsRepo(ids);
+  const assistantsRepo = new RedisAssistantsRepo(ids);
+  const threadsRepo = new RedisThreadsRepo(ids);
+  const messagesRepo = new RedisMessagesRepo(ids);
+  const runsRepo = new RedisRunsRepo(ids);
 
   const responsesClient = process.env.NODE_ENV === 'test' ? new FakeResponsesClient() : new OpenAIResponsesClient();
 

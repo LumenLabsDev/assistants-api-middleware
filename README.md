@@ -2,7 +2,7 @@
 
 Fastify + TypeScript server that exposes a minimal Assistants API facade while invoking the newer Responses API. Designed to ease migration: keep your Assistants-shaped client calls, switch the backend to Responses.
 
-This project follows Clean Architecture with an MVC-style HTTP interface, swappable infrastructure (in-memory or Redis), and structured logging.
+This project follows Clean Architecture with an MVC-style HTTP interface, Redis-backed persistence, and structured logging.
 
 ### Highlights
 - Assistants: create/list/get/update
@@ -15,11 +15,13 @@ This project follows Clean Architecture with an MVC-style HTTP interface, swappa
 ### Requirements
 - Node 18+
 - `OPENAI_API_KEY` in environment or `.env`
-- Optional: `REDIS_URL` to enable Redis-backed repositories
+- `REDIS_URL` (Redis 7+) — required for persistence
 
 ### Quick start
 ```bash
 npm install
+echo "OPENAI_API_KEY=sk-..." > .env
+echo "REDIS_URL=redis://localhost:6379" >> .env
 npm run dev  # http://localhost:3000
 ```
 ### Docker
@@ -39,11 +41,11 @@ Images are published to GHCR on release:
 GitHub Releases also attach an `linux-amd64` image tar for offline use.
 
 
-`.env` (optional):
+`.env`:
 ```bash
 OPENAI_API_KEY=sk-...
 PORT=3000
-# Enable Redis persistence (optional)
+# Redis is required
 REDIS_URL=redis://localhost:6379
 ```
 
@@ -105,16 +107,98 @@ curl -s http://localhost:3000/v1/threads/<thread_id>/messages
 src/
   domain/            # Entities and interfaces (ports)
   application/       # Use cases (services)
-  infra/             # In-memory and Redis repositories, OpenAI Responses client
+  infra/             # Redis repositories, OpenAI Responses client, ID generator
   interfaces/http/   # Controllers, presenters, DTOs, validation, error handling
   container.ts       # Simple DI wiring (switches infra via env)
   server.ts          # Fastify bootstrap
 ```
 
 ### Notes & next steps
-- Persistence defaults to in-memory. Set `REDIS_URL` to use Redis-backed repos.
+- Persistence requires Redis (set `REDIS_URL`).
 - Add streaming endpoints and tool-calls if needed.
 - The included OpenAPI YAMLs serve as references; not used for runtime validation.
+
+### Architecture
+
+Component layering (Clean Architecture-inspired):
+
+```mermaid
+graph TD
+  subgraph Interfaces (HTTP)
+    Ctr[Controllers]
+    Val[Zod Schemas]
+    Pres[Presenters]
+  end
+
+  subgraph Application (Use Cases)
+    SvcA[AssistantsService]
+    SvcT[ThreadsService]
+    SvcR[RunsService]
+  end
+
+  subgraph Domain
+    Types[Types]
+    Ports[Ports]
+    Errors[Errors]
+    Models[Models]
+  end
+
+  subgraph Infrastructure
+    Repos[(Redis Repos)]
+    Resp[OpenAI Responses Client]
+    IdGen[UUID Id Generator]
+    Redis[(Redis)]
+    OpenAI[(OpenAI Responses)]
+  end
+
+  Ctr -->|validate| Val
+  Ctr -->|call| SvcA
+  Ctr -->|call| SvcT
+  Ctr -->|call| SvcR
+
+  SvcA --> Ports
+  SvcT --> Ports
+  SvcR --> Ports
+  SvcA --> Types
+  SvcT --> Types
+  SvcR --> Types
+
+  Repos -->|implements| Ports
+  Resp -->|implements| Ports
+  IdGen --> Repos
+
+  Repos -->|persist| Redis
+  Resp -->|invoke| OpenAI
+
+  Pres --> Ctr
+```
+
+Run flow (create run over a thread):
+
+```mermaid
+sequenceDiagram
+  participant Client
+  participant HTTP as HTTP Controller
+  participant Runs as RunsService
+  participant Assist as AssistantsRepo (Redis)
+  participant Msg as MessagesRepo (Redis)
+  participant RunRepo as RunsRepo (Redis)
+  participant OA as OpenAI Responses
+
+  Client->>HTTP: POST /v1/threads/:id/runs { assistant_id }
+  HTTP->>Runs: createRun(threadId, assistantId)
+  Runs->>Assist: get(assistantId)
+  Assist-->>Runs: assistant
+  Runs->>RunRepo: create({ queued })
+  Runs->>Msg: listByThread(threadId)
+  Runs->>OA: createTextResponse(model, input)
+  OA-->>Runs: text
+  Runs->>Msg: add({ role: assistant, content: text })
+  Msg-->>Runs: message{id}
+  Runs->>RunRepo: update({ completed, responseMessageId })
+  Runs-->>HTTP: run
+  HTTP-->>Client: 201 { run }
+```
 
 ### Architecture
 - Clean Architecture layering:
@@ -125,7 +209,7 @@ src/
 - Dependency flow: outer layers depend inward; infra implements domain ports.
 
 ### CI/CD
-- CI: `.github/workflows/ci.yml` — build and test on Node 18/20/22; runs with and without Redis service.
+- CI: `.github/workflows/ci.yml` — build and test on Node 18/20/22; matrix includes runs with and without Redis service. Tests that require Redis are skipped when `REDIS_URL` is not set.
 - Release: `.github/workflows/release.yml` — on release from `main`, pushes multi-arch Docker images to GHCR and uploads an amd64 image tar to the release.
 
 ### Testing
@@ -134,7 +218,7 @@ npm test        # run once
 npm run test:watch
 ```
 Tests include:
-- Services unit tests using in-memory repos and a fake Responses client
+- Services tests using Redis repos (set `REDIS_URL`) and a fake Responses client
 - HTTP integration test booting Fastify via `buildApp()`
 
 ### License
