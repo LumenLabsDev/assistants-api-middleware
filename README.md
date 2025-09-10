@@ -44,8 +44,8 @@ docker run --rm -p 3500:3500 \
 ```
 
 Images are published to GHCR on release:
-- `ghcr.io/<org-or-user>/open-assistants-api:latest`
-- `ghcr.io/<org-or-user>/open-assistants-api:<version>`
+- `ghcr.io/LumenLabsDev/open-assistants-api:latest`
+- `ghcr.io/LumenLabsDev/open-assistants-api:<version>`
 
 GitHub Releases also attach an `linux-amd64` image tar for offline use.
 
