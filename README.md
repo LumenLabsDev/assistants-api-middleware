@@ -1,21 +1,30 @@
-## Open Assistants API (Responses-backed)
+# Open Assistants API (Responses-backed)
 
-Fastify + TypeScript server that exposes a minimal Assistants API facade while invoking the newer Responses API. Designed to ease migration: keep your Assistants-shaped client calls, switch the backend to Responses.
+[![CI](https://github.com/LumenLabsDev/open-assistants-api/actions/workflows/ci.yml/badge.svg)](https://github.com/LumenLabsDev/open-assistants-api/actions/workflows/ci.yml)
+![Node](https://img.shields.io/badge/node-%3E%3D18-informational)
+![Fastify](https://img.shields.io/badge/Fastify-%20-lightgrey)
+![TypeScript](https://img.shields.io/badge/TypeScript-%20-blue)
+![Redis](https://img.shields.io/badge/Redis-%20-red)
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow)
+![Docker](https://img.shields.io/badge/Docker-ready-success)
 
-This project follows Clean Architecture with an MVC-style HTTP interface, Redis-backed persistence, and structured logging.
+**Assistants-shaped API façade built on the OpenAI Responses API.** Keep your Assistants-style client calls and migrate your backend to **Responses** at your own pace.  
+Stack: **Fastify + TypeScript**, **Redis** persistence, **Zod** validation, **structured logging**, and clean architecture.
 
-### Highlights
-- Assistants: create/list/get/update
-- Threads: create; Messages: list/add
-- Runs: create/get/list — translates thread context to a single Responses call
-- Clean architecture: domain, application (services), infrastructure (repos/clients), interfaces (HTTP controllers)
-- MVC-ish controllers with Zod validation and presenters that shape responses like Assistants
-- Structured logs (ISO ts, level, component, version)
+## Highlights
 
-### Requirements
-- Node 18+
+- **Assistants**: create / list / get / update  
+- **Threads**: create • **Messages**: list / add  
+- **Runs**: create / list / get — translates thread context into a single **Responses** call  
+- **Clean architecture**: domain, application (services), infrastructure (repos/clients), interfaces (HTTP controllers)  
+- **MVC-ish controllers** with Zod validation and presenters that shape responses like Assistants  
+- **Structured logs** (ISO timestamp, level, component, version)
+
+## Requirements
+
+- Node **18+**
 - `OPENAI_API_KEY` in environment or `.env`
-- `REDIS_URL` (Redis 7+) — required for persistence
+- `REDIS_URL` (**Redis 7+**) — required for persistence
 
 ### Quick start
 ```bash
