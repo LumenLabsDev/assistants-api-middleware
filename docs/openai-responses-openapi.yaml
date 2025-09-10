@@ -1,0 +1,288 @@
+openapi: 3.1.0
+info:
+  title: OpenAI Responses API
+  version: "2025-09-09"
+  description: |
+    Minimal OpenAPI spec for the OpenAI **Responses API**.
+    Covers creating a response and retrieving a response by id, including optional SSE streaming.
+    See official docs for the full surface: https://platform.openai.com/docs/api-reference/responses
+servers:
+  - url: https://api.openai.com
+    description: OpenAI API
+security:
+  - bearerAuth: []
+paths:
+  /v1/responses:
+    post:
+      operationId: createResponse
+      summary: Create a response
+      description: |
+        Creates a response using the Responses API. For event streaming, set `stream: true`
+        and listen for `text/event-stream` events from the HTTP response.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateResponseRequest'
+      responses:
+        '200':
+          description: Response created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Rate limited
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      x-streaming:
+        sse:
+          description: Server-Sent Events stream when `stream: true` is set
+          mediaType: text/event-stream
+          examples:
+            data: |
+              event: response.output_text.delta
+              data: {"delta":"Hello"}
+
+
+              event: response.completed
+              data: {"id":"resp_...","status":"completed"}
+  /v1/responses/{response_id}:
+    get:
+      operationId: getResponse
+      summary: Retrieve a response
+      description: Retrieve a previously created response by its ID.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: response_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Response retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: Bearer
+  schemas:
+    CreateResponseRequest:
+      type: object
+      required: [model, input]
+      properties:
+        model:
+          type: string
+          description: Model name, e.g. gpt-4.1-mini, gpt-4o, o3-mini, etc.
+          example: gpt-4.1-mini
+        input:
+          description: |
+            Input for the response. Can be a simple string (single turn) or a list
+            of content parts/messages for multi-turn or tool-augmented calls.
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                $ref: '#/components/schemas/InputItem'
+        instructions:
+          type: string
+          description: System/assistant-style instructions to control behavior.
+        store:
+          type: boolean
+          description: Persist the response for later retrieval (enables statefulness).
+          default: false
+        previous_response_id:
+          type: string
+          description: |
+            When set, continues from a prior response to maintain conversation state.
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Arbitrary key/value metadata to attach to the response.
+        tools:
+          type: array
+          description: Built-in or custom tools available to the model this call.
+          items:
+            $ref: '#/components/schemas/Tool'
+        tool_choice:
+          description: Force or suggest a particular tool behavior.
+          oneOf:
+            - type: string
+              enum: [auto, required, none]
+            - type: object
+              properties:
+                type:
+                  type: string
+                  enum: [function]
+                function:
+                  type: object
+                  properties:
+                    name: { type: string }
+        response_format:
+          description: Structured outputs / schema validation.
+          oneOf:
+            - type: string
+              enum: [text, json_schema]
+            - type: object
+              properties:
+                type:
+                  type: string
+                  enum: [json_schema]
+                json_schema:
+                  $ref: '#/components/schemas/JSONSchema'
+        temperature:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 2
+          default: 1
+        max_output_tokens:
+          type: integer
+          minimum: 1
+          description: Upper bound on tokens generated by the model.
+        stream:
+          type: boolean
+          default: false
+          description: When true, the endpoint returns an SSE stream.
+    InputItem:
+      type: object
+      description: A content item in the input array.
+      properties:
+        role:
+          type: string
+          enum: [user, system, assistant, tool]
+        content:
+          description: Content parts; may include text, images, tool results.
+          oneOf:
+            - $ref: '#/components/schemas/TextContent'
+            - $ref: '#/components/schemas/ToolResultContent'
+            - $ref: '#/components/schemas/ImageContent'
+    TextContent:
+      type: object
+      properties:
+        type: { type: string, enum: [text] }
+        text: { type: string }
+    ImageContent:
+      type: object
+      properties:
+        type: { type: string, enum: [input_image] }
+        image_url: { type: string, format: uri }
+        detail:
+          type: string
+          enum: [low, high, auto]
+          default: auto
+    ToolResultContent:
+      type: object
+      properties:
+        type: { type: string, enum: [tool_result] }
+        tool_name: { type: string }
+        tool_call_id: { type: string }
+        output: {}
+    Tool:
+      type: object
+      required: [type]
+      properties:
+        type:
+          type: string
+          enum: [code_interpreter, file_search, function, web_search, image_generation]
+        function:
+          type: object
+          properties:
+            name: { type: string }
+            description: { type: string }
+            parameters:
+              $ref: '#/components/schemas/JSONSchema'
+    JSONSchema:
+      type: object
+      description: A JSON Schema object (Draft 2020-12 compatible).
+      additionalProperties: true
+    Response:
+      type: object
+      properties:
+        id: { type: string, example: resp_abc123 }
+        object: { type: string, example: response }
+        created: { type: integer, format: int64 }
+        model: { type: string }
+        status:
+          type: string
+          description: Current status of the response.
+          enum: [in_progress, completed, failed, cancelled, queued]
+        output:
+          description: Rich output content (text, images, tool calls/results).
+          type: array
+          items:
+            $ref: '#/components/schemas/OutputItem'
+        output_text:
+          type: string
+          description: Convenience field with all text output concatenated.
+        usage:
+          $ref: '#/components/schemas/Usage'
+        last_error:
+          $ref: '#/components/schemas/Error'
+    OutputItem:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [output_text, tool_call, image, error]
+        content:
+          description: Content varies by type; for text this will be the string.
+        tool_name:
+          type: string
+        tool_call_id:
+          type: string
+        arguments:
+          type: object
+          additionalProperties: true
+    Usage:
+      type: object
+      properties:
+        input_tokens: { type: integer }
+        output_tokens: { type: integer }
+        total_tokens: { type: integer }
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            type: { type: string }
+            message: { type: string }
+            param: { type: string }
+            code: { type: string }

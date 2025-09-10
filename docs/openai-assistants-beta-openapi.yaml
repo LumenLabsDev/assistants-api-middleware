@@ -1,0 +1,572 @@
+openapi: 3.1.0
+info:
+  title: OpenAI Assistants API (beta)
+  version: "2025-09-09"
+  description: |
+    Minimal OpenAPI spec for the legacy/beta **Assistants API** surface.
+    Includes common endpoints for assistants, threads, messages, and runs.
+    Intended to help teams migrate or maintain backward compatibility.
+servers:
+  - url: https://api.openai.com
+    description: OpenAI API
+security:
+  - bearerAuth: []
+paths:
+  /v1/assistants:
+    post:
+      operationId: createAssistant
+      summary: Create an assistant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAssistantRequest'
+      responses:
+        '200':
+          description: Assistant created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Assistant'
+    get:
+      operationId: listAssistants
+      summary: List assistants
+      parameters:
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+        - in: query
+          name: after
+          schema: { type: string }
+      responses:
+        '200':
+          description: A list of assistants
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  object: { type: string, example: list }
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Assistant' }
+                  has_more: { type: boolean }
+  /v1/assistants/{assistant_id}:
+    get:
+      operationId: getAssistant
+      summary: Retrieve an assistant
+      parameters:
+        - name: assistant_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Assistant retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Assistant'
+    post:
+      operationId: modifyAssistant
+      summary: Update an assistant
+      parameters:
+        - name: assistant_id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAssistantRequest'
+      responses:
+        '200':
+          description: Assistant updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Assistant'
+    delete:
+      operationId: deleteAssistant
+      summary: Delete an assistant
+      parameters:
+        - name: assistant_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Assistant deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: { type: string }
+                  deleted: { type: boolean }
+  /v1/threads:
+    post:
+      operationId: createThread
+      summary: Create a thread
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                messages:
+                  type: array
+                  items: { $ref: '#/components/schemas/ThreadMessageCreate' }
+      responses:
+        '200':
+          description: Thread created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Thread'
+    get:
+      operationId: listThreads
+      summary: List threads
+      parameters:
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+        - in: query
+          name: after
+          schema: { type: string }
+      responses:
+        '200':
+          description: A list of threads
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  object: { type: string, example: list }
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Thread' }
+                  has_more: { type: boolean }
+  /v1/threads/{thread_id}:
+    get:
+      operationId: getThread
+      summary: Retrieve a thread
+      parameters:
+        - name: thread_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Thread retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Thread'
+    delete:
+      operationId: deleteThread
+      summary: Delete a thread
+      parameters:
+        - name: thread_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Thread deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: { type: string }
+                  deleted: { type: boolean }
+  /v1/threads/{thread_id}/messages:
+    post:
+      operationId: createMessage
+      summary: Create a message in a thread
+      parameters:
+        - name: thread_id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ThreadMessageCreate'
+      responses:
+        '200':
+          description: Message created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+    get:
+      operationId: listMessages
+      summary: List messages in a thread
+      parameters:
+        - name: thread_id
+          in: path
+          required: true
+          schema: { type: string }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 100, default: 50 }
+        - in: query
+          name: order
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+        - in: query
+          name: after
+          schema: { type: string }
+      responses:
+        '200':
+          description: A list of messages
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  object: { type: string, example: list }
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Message' }
+                  has_more: { type: boolean }
+  /v1/threads/{thread_id}/runs:
+    post:
+      operationId: createRun
+      summary: Create a run
+      description: Starts a run for a thread using a specific assistant.
+      parameters:
+        - name: thread_id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRunRequest'
+      responses:
+        '200':
+          description: Run created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Run'
+    get:
+      operationId: listRuns
+      summary: List runs for a thread
+      parameters:
+        - name: thread_id
+          in: path
+          required: true
+          schema: { type: string }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+        - in: query
+          name: after
+          schema: { type: string }
+      responses:
+        '200':
+          description: A list of runs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  object: { type: string, example: list }
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Run' }
+                  has_more: { type: boolean }
+  /v1/threads/{thread_id}/runs/{run_id}:
+    get:
+      operationId: getRun
+      summary: Retrieve a run
+      parameters:
+        - name: thread_id
+          in: path
+          required: true
+          schema: { type: string }
+        - name: run_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Run retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Run'
+    post:
+      operationId: modifyRun
+      summary: Update a run (e.g., submit tool outputs)
+      parameters:
+        - name: thread_id
+          in: path
+          required: true
+          schema: { type: string }
+        - name: run_id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRunRequest'
+      responses:
+        '200':
+          description: Run updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Run'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: Bearer
+  schemas:
+    Assistant:
+      type: object
+      properties:
+        id: { type: string, example: asst_abc123 }
+        object: { type: string, example: assistant }
+        created_at: { type: integer, format: int64 }
+        name: { type: string }
+        model: { type: string }
+        instructions: { type: string }
+        tools:
+          type: array
+          items: { $ref: '#/components/schemas/AssistantTool' }
+        metadata:
+          type: object
+          additionalProperties: true
+    AssistantTool:
+      type: object
+      required: [type]
+      properties:
+        type:
+          type: string
+          enum: [code_interpreter, retrieval, function, file_search, web_search, image_generation]
+        function:
+          type: object
+          properties:
+            name: { type: string }
+            description: { type: string }
+            parameters:
+              type: object
+              additionalProperties: true
+    CreateAssistantRequest:
+      type: object
+      required: [model]
+      properties:
+        model: { type: string, example: gpt-4.1-mini }
+        name: { type: string }
+        instructions: { type: string }
+        tools:
+          type: array
+          items: { $ref: '#/components/schemas/AssistantTool' }
+        metadata:
+          type: object
+          additionalProperties: true
+    UpdateAssistantRequest:
+      type: object
+      properties:
+        name: { type: string }
+        instructions: { type: string }
+        tools:
+          type: array
+          items: { $ref: '#/components/schemas/AssistantTool' }
+        metadata:
+          type: object
+          additionalProperties: true
+    Thread:
+      type: object
+      properties:
+        id: { type: string, example: thread_abc123 }
+        object: { type: string, example: thread }
+        created_at: { type: integer, format: int64 }
+        metadata:
+          type: object
+          additionalProperties: true
+    ThreadMessageCreate:
+      type: object
+      required: [role, content]
+      properties:
+        role:
+          type: string
+          enum: [user, assistant, system, tool]
+        content:
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                type: object
+                properties:
+                  type: { type: string, enum: [text, image_file, input_image] }
+                  text: { type: string }
+                  image_file_id: { type: string }
+        attachments:
+          type: array
+          items:
+            type: object
+            properties:
+              file_id: { type: string }
+              tools:
+                type: array
+                items: { $ref: '#/components/schemas/AssistantTool' }
+        metadata:
+          type: object
+          additionalProperties: true
+    Message:
+      type: object
+      properties:
+        id: { type: string, example: msg_abc123 }
+        object: { type: string, example: thread.message }
+        created_at: { type: integer, format: int64 }
+        thread_id: { type: string }
+        role:
+          type: string
+          enum: [user, assistant, system, tool]
+        content:
+          type: array
+          items:
+            type: object
+            properties:
+              type: { type: string, enum: [text, image_file] }
+              text:
+                type: object
+                properties:
+                  value: { type: string }
+                  annotations:
+                    type: array
+                    items: { type: object }
+              image_file:
+                type: object
+                properties:
+                  file_id: { type: string }
+        metadata:
+          type: object
+          additionalProperties: true
+    CreateRunRequest:
+      type: object
+      required: [assistant_id]
+      properties:
+        assistant_id: { type: string }
+        model: { type: string, description: "Optional override" }
+        instructions: { type: string }
+        additional_instructions: { type: string }
+        tools:
+          type: array
+          items: { $ref: '#/components/schemas/AssistantTool' }
+        tool_choice:
+          oneOf:
+            - type: string
+              enum: [auto, required, none]
+            - type: object
+              properties:
+                type: { type: string, enum: [function] }
+                function:
+                  type: object
+                  properties:
+                    name: { type: string }
+        metadata:
+          type: object
+          additionalProperties: true
+        temperature:
+          type: number
+        max_prompt_tokens:
+          type: integer
+        max_completion_tokens:
+          type: integer
+        response_format:
+          oneOf:
+            - type: string
+              enum: [text, json_schema]
+            - type: object
+              properties:
+                type: { type: string, enum: [json_schema] }
+                json_schema:
+                  type: object
+                  additionalProperties: true
+    UpdateRunRequest:
+      type: object
+      description: Submit tool outputs or modify the run state.
+      properties:
+        tool_outputs:
+          type: array
+          items:
+            type: object
+            properties:
+              tool_call_id: { type: string }
+              output: {}
+        status:
+          type: string
+          enum: [in_progress, completed, cancelled]
+    Run:
+      type: object
+      properties:
+        id: { type: string, example: run_abc123 }
+        object: { type: string, example: thread.run }
+        created_at: { type: integer, format: int64 }
+        thread_id: { type: string }
+        assistant_id: { type: string }
+        model: { type: string }
+        status:
+          type: string
+          enum: [queued, in_progress, requires_action, completed, failed, cancelled, expired]
+        required_action:
+          type: object
+          properties:
+            type: { type: string, enum: [submit_tool_outputs] }
+            submit_tool_outputs:
+              type: object
+              properties:
+                tool_calls:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id: { type: string }
+                      type: { type: string, enum: [function] }
+                      function:
+                        type: object
+                        properties:
+                          name: { type: string }
+                          arguments: { type: string }
+        last_error:
+          type: object
+          properties:
+            code: { type: string }
+            message: { type: string }
+        usage:
+          type: object
+          properties:
+            prompt_tokens: { type: integer }
+            completion_tokens: { type: integer }
+            total_tokens: { type: integer }
+        metadata:
+          type: object
+          additionalProperties: true
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: Bearer
