@@ -1,13 +1,15 @@
 name: Release
 
 on:
+  push:
+    branches: [main]
   release:
     types: [created]
 
 jobs:
   docker:
     runs-on: ubuntu-latest
-    if: ${{ github.event.release.target_commitish == 'main' }}
+    if: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'release' && github.event.release.target_commitish == 'main') }}
     permissions:
       contents: write
       packages: write
@@ -28,12 +30,23 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract version
+      - name: Docker metadata
         id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/open-assistants-api
+          tags: |
+            type=raw,value=latest
+            type=ref,event=tag
+            type=semver,pattern={{version}}
+            type=sha
+
+      - name: Extract release version
+        if: ${{ github.event_name == 'release' }}
+        id: release_meta
         run: |
           VERSION=${GITHUB_REF_NAME#v}
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "tag=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
 
       - name: Build and push multi-arch image
         uses: docker/build-push-action@v6
@@ -41,18 +54,19 @@ jobs:
           context: .
           push: true
           platforms: linux/amd64,linux/arm64
-          tags: |
-            ghcr.io/${{ github.repository_owner }}/open-assistants-api:latest
-            ghcr.io/${{ github.repository_owner }}/open-assistants-api:${{ steps.meta.outputs.version }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
 
       - name: Build amd64 image tar
+        if: ${{ github.event_name == 'release' }}
         run: |
-          docker buildx build --platform linux/amd64 -t ghcr.io/${{ github.repository_owner }}/open-assistants-api:${{ steps.meta.outputs.version }} --output type=docker,dest=open-assistants-api_${{ steps.meta.outputs.version }}_linux-amd64.tar .
+          docker buildx build --platform linux/amd64 -t ghcr.io/${{ github.repository_owner }}/open-assistants-api:${{ steps.release_meta.outputs.version }} --output type=docker,dest=open-assistants-api_${{ steps.release_meta.outputs.version }}_linux-amd64.tar .
 
       - name: Upload image tar to release
+        if: ${{ github.event_name == 'release' }}
         uses: softprops/action-gh-release@v2
         with:
-          files: open-assistants-api_${{ steps.meta.outputs.version }}_linux-amd64.tar
+          files: open-assistants-api_${{ steps.release_meta.outputs.version }}_linux-amd64.tar
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
