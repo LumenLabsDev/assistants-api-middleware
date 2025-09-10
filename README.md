@@ -124,13 +124,13 @@ Component layering (Clean Architecture-inspired):
 
 ```mermaid
 graph TD
-  subgraph Interfaces (HTTP)
+  subgraph Interfaces_HTTP
     Ctr[Controllers]
     Val[Zod Schemas]
     Pres[Presenters]
   end
 
-  subgraph Application (Use Cases)
+  subgraph Application_Use_Cases
     SvcA[AssistantsService]
     SvcT[ThreadsService]
     SvcR[RunsService]
@@ -143,7 +143,7 @@ graph TD
     Models[Models]
   end
 
-  subgraph Infrastructure
+  subgraph Infrastructure_Layer
     Repos[(Redis Repos)]
     Resp[OpenAI Responses Client]
     IdGen[UUID Id Generator]
@@ -178,12 +178,12 @@ Run flow (create run over a thread):
 ```mermaid
 sequenceDiagram
   participant Client
-  participant HTTP as HTTP Controller
+  participant HTTP as HTTP_Controller
   participant Runs as RunsService
-  participant Assist as AssistantsRepo (Redis)
-  participant Msg as MessagesRepo (Redis)
-  participant RunRepo as RunsRepo (Redis)
-  participant OA as OpenAI Responses
+  participant Assist as AssistantsRepo_Redis
+  participant Msg as MessagesRepo_Redis
+  participant RunRepo as RunsRepo_Redis
+  participant OA as OpenAI_Responses
 
   Client->>HTTP: POST /v1/threads/:id/runs { assistant_id }
   HTTP->>Runs: createRun(threadId, assistantId)
