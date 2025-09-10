@@ -2,7 +2,9 @@ import { describe, it, expect } from 'vitest';
 import request from 'supertest';
 import { buildApp } from '../src/app.js';
 
-describe('http', () => {
+const hasRedis = Boolean(process.env.REDIS_URL);
+
+(hasRedis ? describe : describe.skip)('http', () => {
   it('assistant → thread → message → run', async () => {
     const app = await buildApp();
     await app.ready();

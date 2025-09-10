@@ -2,7 +2,9 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
 import { buildApp } from '../src/app.js';
 
-describe('http errors', () => {
+const hasRedis = Boolean(process.env.REDIS_URL);
+
+(hasRedis ? describe : describe.skip)('http errors', () => {
   let server: any;
   let close: () => Promise<void>;
 
