@@ -16,7 +16,7 @@ const hasRedis = Boolean(process.env.REDIS_URL);
 
   const assistants = new AssistantsService(assistantsRepo);
   const threads = new ThreadsService(threadsRepo, messagesRepo);
-  const runs = new RunsService(runsRepo, assistantsRepo, messagesRepo, responses);
+  const runs = new RunsService(runsRepo, threadsRepo, assistantsRepo, messagesRepo, responses);
 
   it('creates assistant, thread, message, and run', async () => {
     const a = await assistants.create({ name: 'A', model: 'gpt-4o', instructions: 'hi' });
