@@ -4,7 +4,7 @@ import { buildApp } from './app.js';
 
 const logger = createLogger('server');
 
-const port = Number(process.env.PORT ?? 3000);
+const port = Number(process.env.PORT ?? 3500);
 
 /**
  * Boot the HTTP server and listen on configured port.

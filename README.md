@@ -22,13 +22,13 @@ This project follows Clean Architecture with an MVC-style HTTP interface, Redis-
 npm install
 echo "OPENAI_API_KEY=sk-..." > .env
 echo "REDIS_URL=redis://localhost:6379" >> .env
-npm run dev  # http://localhost:3000
+npm run dev  # http://localhost:3500
 ```
 ### Docker
 Build locally:
 ```bash
 docker build -t open-assistants-api:local .
-docker run --rm -p 3000:3000 \
+docker run --rm -p 3500:3500 \
   -e OPENAI_API_KEY=sk-... \
   -e REDIS_URL=redis://host.docker.internal:6379 \
   open-assistants-api:local
@@ -44,14 +44,14 @@ GitHub Releases also attach an `linux-amd64` image tar for offline use.
 `.env`:
 ```bash
 OPENAI_API_KEY=sk-...
-PORT=3000
+PORT=3500
 # Redis is required
 REDIS_URL=redis://localhost:6379
 ```
 
 ### Health check
 ```bash
-curl -s http://localhost:3000/health
+curl -s http://localhost:3500/health
 # {"status":"ok"}
 ```
 
@@ -64,30 +64,30 @@ curl -s http://localhost:3000/health
 ### Example flow
 1) Create assistant
 ```bash
-curl -s -X POST http://localhost:3000/v1/assistants -H 'content-type: application/json' \
+curl -s -X POST http://localhost:3500/v1/assistants -H 'content-type: application/json' \
   -d '{"name":"Helper","instructions":"Answer briefly.","model":"gpt-4o-mini"}'
 ```
 
 2) Create thread
 ```bash
-curl -s -X POST http://localhost:3000/v1/threads
+curl -s -X POST http://localhost:3500/v1/threads
 ```
 
 3) Add message
 ```bash
-curl -s -X POST http://localhost:3000/v1/threads/<thread_id>/messages -H 'content-type: application/json' \
+curl -s -X POST http://localhost:3500/v1/threads/<thread_id>/messages -H 'content-type: application/json' \
   -d '{"role":"user","content":"Hello!"}'
 ```
 
 4) Run
 ```bash
-curl -s -X POST http://localhost:3000/v1/threads/<thread_id>/runs -H 'content-type: application/json' \
+curl -s -X POST http://localhost:3500/v1/threads/<thread_id>/runs -H 'content-type: application/json' \
   -d '{"assistant_id":"<assistant_id>"}'
 ```
 
 5) List messages
 ```bash
-curl -s http://localhost:3000/v1/threads/<thread_id>/messages
+curl -s http://localhost:3500/v1/threads/<thread_id>/messages
 ```
 
 ### Quick reference (HTTP)
