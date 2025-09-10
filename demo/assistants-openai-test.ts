@@ -16,27 +16,43 @@ async function main() {
   });
   console.log('Assistant created:', assistant.id);
 
+  // 1a) List assistants
+  const assistantsList = await client.beta.assistants.list();
+  console.log('Assistants count:', assistantsList.data?.length ?? 0);
+
+  // 1b) Get assistant
+  const gotAssistant = await client.beta.assistants.retrieve(assistant.id);
+  console.log('Assistant retrieved name:', gotAssistant.name);
+
+  // 1c) Update assistant
+  const updatedAssistant = await client.beta.assistants.update(assistant.id, { name: 'Local Demo Assistant v2' } as any);
+  console.log('Assistant updated name:', updatedAssistant.name);
+
   // 2) Create a thread
   const thread = await client.beta.threads.create();
   console.log('Thread created:', thread.id);
 
-  // 3) Add a user message
-  await client.beta.threads.messages.create(thread.id, {
-    role: 'user',
-    content: 'Say hello in one word.'
-  });
-  console.log('User message added');
+  // 3) Add user/system messages
+  await client.beta.threads.messages.create(thread.id, { role: 'user', content: 'Say hello in one word.' });
+  await client.beta.threads.messages.create(thread.id, { role: 'system', content: 'Keep responses short.' } as any);
+  await client.beta.threads.messages.create(thread.id, { role: 'user', content: 'What is 2+2?' });
+  console.log('Messages added');
 
-  // 4) Create a run
-  const run = await client.beta.threads.runs.create(thread.id, {
-    assistant_id: assistant.id,
-    temperature: 0.2
-  });
-  console.log('Run created:', run.id, 'status:', run.status);
+  // 4) Create first run
+  const run1 = await client.beta.threads.runs.create(thread.id, { assistant_id: assistant.id, temperature: 0.2 });
+  console.log('Run1 created:', run1.id, 'status:', run1.status);
 
-  // 5) Retrieve run (optional; middleware returns final state immediately)
-  const got = await client.beta.threads.runs.retrieve(run.id, { thread_id: thread.id } as any);
-  console.log('Run retrieved:', got.id, 'status:', got.status);
+  // 4a) Retrieve run1
+  const got1 = await client.beta.threads.runs.retrieve(run1.id, { thread_id: thread.id } as any);
+  console.log('Run1 retrieved status:', got1.status);
+
+  // 5) Create second run
+  const run2 = await client.beta.threads.runs.create(thread.id, { assistant_id: assistant.id });
+  console.log('Run2 created:', run2.id, 'status:', run2.status);
+
+  // 5a) List runs
+  const runsList = await client.beta.threads.runs.list(thread.id);
+  console.log('Runs count:', runsList.data?.length ?? 0);
 
   // 6) List messages and print the latest assistant reply
   const messages = await client.beta.threads.messages.list(thread.id);
@@ -44,6 +60,18 @@ async function main() {
   const lastAssistant = [...data].reverse().find(m => (m as any).role === 'assistant');
   const text = (lastAssistant as any)?.content?.[0]?.text?.value ?? '';
   console.log('\nAssistant reply:\n', text);
+
+  // 7) Error paths
+  try {
+    await client.beta.assistants.retrieve('asst_missing');
+  } catch (err: any) {
+    console.log('Expected 404 retrieving missing assistant:', err?.status || err?.code || 'error');
+  }
+  try {
+    await client.beta.threads.runs.create(thread.id, { } as any);
+  } catch (err: any) {
+    console.log('Expected 400 creating run without assistant_id:', err?.status || err?.code || 'error');
+  }
 }
 
 main().catch((err: any) => {

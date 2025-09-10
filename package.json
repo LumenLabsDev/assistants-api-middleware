@@ -10,7 +10,7 @@
     "build": "tsc -p tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest",
-    "demo": "tsx scripts/local-assistants-demo.ts"
+    "demo": "tsx demo/assistants-openai-test.ts"
   },
   "dependencies": {
     "@fastify/cors": "^11.1.0",
