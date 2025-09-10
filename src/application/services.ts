@@ -54,6 +54,7 @@ export class ThreadsService {
 export class RunsService {
   constructor(
     private runs: RunsRepository,
+    private threads: ThreadsRepository,
     private assistants: AssistantsRepository,
     private messages: MessagesRepository,
     private responses: ResponsesClient,
@@ -63,6 +64,10 @@ export class RunsService {
    * Create a run for a thread and assistant, invoking the Responses client.
    */
   async createRun(params: RunCreateInput): Promise<Run> {
+    // Ensure thread exists at the use-case boundary
+    const thread = await this.threads.get(params.threadId);
+    if (!thread) throw new NotFoundError('thread_not_found');
+
     const assistant = await this.assistants.get(params.assistantId);
     if (!assistant) throw new NotFoundError('assistant_not_found');
 

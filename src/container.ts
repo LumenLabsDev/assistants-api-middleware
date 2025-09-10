@@ -20,7 +20,7 @@ export function buildContainer() {
 
   const assistants = new AssistantsService(assistantsRepo);
   const threads = new ThreadsService(threadsRepo, messagesRepo);
-  const runs = new RunsService(runsRepo, assistantsRepo, messagesRepo, responsesClient);
+  const runs = new RunsService(runsRepo, threadsRepo, assistantsRepo, messagesRepo, responsesClient);
 
   return { assistants, threads, runs };
 }

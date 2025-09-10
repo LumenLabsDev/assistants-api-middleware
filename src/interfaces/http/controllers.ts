@@ -73,8 +73,7 @@ export function buildControllers(app: FastifyInstance, deps: {
 
   app.get('/v1/threads/:thread_id/runs', async (req, reply) => {
     const { thread_id } = req.params as { thread_id: string };
-    const thread = await deps.threads.getThread(thread_id);
-    if (!thread) return reply.code(404).send({ error: 'not_found' });
+    await deps.threads.requireThread(thread_id);
     const data = (await deps.runs.listRuns(thread_id)).map(toRunResource);
     return reply.send(toList(data));
   });

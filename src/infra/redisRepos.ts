@@ -114,7 +114,10 @@ export class RedisRunsRepo implements RunsRepository {
     const ids = await redis.lRange(key.runsByThread(threadId), 0, -1);
     if (ids.length === 0) return [];
     const values = await redis.mGet(ids.map(key.run));
-    return values.filter(Boolean).map(v => JSON.parse(v as string) as Run);
+    return values
+      .filter(Boolean)
+      .map(v => JSON.parse(v as string) as Run)
+      .sort((a, b) => a.createdAt - b.createdAt);
   }
 }
 

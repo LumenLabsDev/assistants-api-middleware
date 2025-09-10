@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { createLogger } from '../../logger.js';
-import { DomainError, NotFoundError, ValidationError } from '../../domain/errors.js';
+import { DomainError, NotFoundError, ValidationError, ExternalServiceError } from '../../domain/errors.js';
 
 const logger = createLogger('http:error');
 
@@ -20,6 +20,9 @@ export function registerErrorHandler(app: FastifyInstance) {
       code = err.code;
     } else if (err instanceof NotFoundError) {
       status = 404;
+      code = err.code;
+    } else if (err instanceof ExternalServiceError) {
+      status = 502;
       code = err.code;
     } else if (err instanceof DomainError) {
       status = 422;
