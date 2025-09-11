@@ -50,6 +50,21 @@ const hasRedis = Boolean(process.env.REDIS_URL);
     expect(['queued', 'in_progress', 'completed', 'failed']).toContain(got.body.status);
   });
 
+  it('returns 404 when fetching a run in a different thread', async () => {
+    const t1 = await request(server).post('/v1/threads').expect(201);
+    const t2 = await request(server).post('/v1/threads').expect(201);
+    const assistantId = await createAssistant();
+
+    const run = await request(server)
+      .post(`/v1/threads/${t1.body.id}/runs`)
+      .send({ assistant_id: assistantId })
+      .expect(201);
+
+    await request(server)
+      .get(`/v1/threads/${t2.body.id}/runs/${run.body.id}`)
+      .expect(404);
+  });
+
   it('lists runs for a thread', async () => {
     const thread = await request(server).post('/v1/threads').expect(201);
     const assistantId = await createAssistant();

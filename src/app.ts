@@ -5,9 +5,7 @@ import { buildControllers } from './interfaces/http/controllers.js';
 import { registerErrorHandler } from './interfaces/http/errors.js';
 import { createLogger } from './logger.js';
 
-/**
- * Build and configure the Fastify application with routes and error handling.
- */
+/** Build and configure the Fastify application with routes and error handling. */
 export async function buildApp() {
   const app = Fastify({ logger: false, trustProxy: true });
   await app.register(cors, { origin: true });

@@ -5,11 +5,12 @@
 ![Fastify](https://img.shields.io/badge/Fastify-%20-lightgrey)
 ![TypeScript](https://img.shields.io/badge/TypeScript-%20-blue)
 ![Redis](https://img.shields.io/badge/Redis-%20-red)
+![Azure Cosmos DB](https://img.shields.io/badge/Azure%20Cosmos%20DB-supported-0078D4)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow)
 ![Docker](https://img.shields.io/badge/Docker-ready-success)
 
 **Assistants-shaped API façade built on the OpenAI Responses API.** Keep your Assistants-style client calls and migrate your backend to **Responses** at your own pace.  
-Stack: **Fastify + TypeScript**, **Redis** persistence, **Zod** validation, **structured logging**, and clean architecture.
+Stack: **Fastify + TypeScript**, **Redis or Azure Cosmos DB** persistence, **Zod** validation, **structured logging**, and clean architecture.
 
 ## Highlights
 
@@ -24,13 +25,26 @@ Stack: **Fastify + TypeScript**, **Redis** persistence, **Zod** validation, **st
 
 - Node **18+**
 - `OPENAI_API_KEY` in environment or `.env`
-- `REDIS_URL` (**Redis 7+**) — required for persistence
+- Choose a database provider:
+  - Redis (**7+**): set `REDIS_URL`
+  - Azure Cosmos DB: set `DATABASE_PROVIDER=cosmos`, `COSMOS_ENDPOINT`, `COSMOS_KEY`, `COSMOS_DATABASE_ID`
 
 ### Quick start
 ```bash
 npm install
 echo "OPENAI_API_KEY=sk-..." > .env
 echo "REDIS_URL=redis://localhost:6379" >> .env
+npm run dev  # http://localhost:3500
+```
+
+### Cosmos DB quick start
+```bash
+npm install
+echo "OPENAI_API_KEY=sk-..." > .env
+echo "DATABASE_PROVIDER=cosmos" >> .env
+echo "COSMOS_ENDPOINT=https://your-account.documents.azure.com:443/" >> .env
+echo "COSMOS_KEY=your-cosmos-db-key" >> .env
+echo "COSMOS_DATABASE_ID=assistants-api" >> .env
 npm run dev  # http://localhost:3500
 ```
 ### Docker
@@ -40,6 +54,17 @@ docker build -t open-assistants-api:local .
 docker run --rm -p 3500:3500 \
   -e OPENAI_API_KEY=sk-... \
   -e REDIS_URL=redis://host.docker.internal:6379 \
+  open-assistants-api:local
+```
+
+Run with Cosmos DB:
+```bash
+docker run --rm -p 3500:3500 \
+  -e OPENAI_API_KEY=sk-... \
+  -e DATABASE_PROVIDER=cosmos \
+  -e COSMOS_ENDPOINT=https://your-account.documents.azure.com:443/ \
+  -e COSMOS_KEY=your-cosmos-db-key \
+  -e COSMOS_DATABASE_ID=assistants-api \
   open-assistants-api:local
 ```
 
@@ -54,8 +79,17 @@ GitHub Releases also attach an `linux-amd64` image tar for offline use.
 ```bash
 OPENAI_API_KEY=sk-...
 PORT=3500
-# Redis is required
+# Select database provider (default = redis)
+DATABASE_PROVIDER=redis
+
+# When using Redis
 REDIS_URL=redis://localhost:6379
+
+# When using Azure Cosmos DB
+# DATABASE_PROVIDER=cosmos
+# COSMOS_ENDPOINT=https://your-account.documents.azure.com:443/
+# COSMOS_KEY=your-cosmos-db-key
+# COSMOS_DATABASE_ID=assistants-api
 ```
 
 ### Health check
@@ -116,14 +150,14 @@ curl -s http://localhost:3500/v1/threads/<thread_id>/messages
 src/
   domain/            # Entities and interfaces (ports)
   application/       # Use cases (services)
-  infra/             # Redis repositories, OpenAI Responses client, ID generator
+  infra/             # Redis/Cosmos repositories, OpenAI Responses client, ID generator
   interfaces/http/   # Controllers, presenters, DTOs, validation, error handling
   container.ts       # Simple DI wiring (switches infra via env)
   server.ts          # Fastify bootstrap
 ```
 
 ### Notes & next steps
-- Persistence requires Redis (set `REDIS_URL`).
+- Persistence requires a DB provider (Redis or Cosmos). Configure env vars accordingly.
 - Add streaming endpoints and tool-calls if needed.
 - The included OpenAPI YAMLs serve as references; not used for runtime validation.
 

@@ -104,10 +104,23 @@ export class RedisRunsRepo implements RunsRepository {
     await redis.set(key.run(id), JSON.stringify(updated));
     return updated;
   }
+  async updateInThread(threadId: string, id: string, data: Partial<Run>): Promise<Run | null> {
+    const current = await this.getInThread(threadId, id);
+    if (!current) return null;
+    const updated = { ...current, ...data } as Run;
+    const redis = await getRedis();
+    await redis.set(key.run(id), JSON.stringify(updated));
+    return updated;
+  }
   async get(id: string): Promise<Run | null> {
     const redis = await getRedis();
     const val = await redis.get(key.run(id));
     return val ? (JSON.parse(val) as Run) : null;
+  }
+  async getInThread(threadId: string, id: string): Promise<Run | null> {
+    const run = await this.get(id);
+    if (!run) return null;
+    return run.threadId === threadId ? run : null;
   }
   async listByThread(threadId: string): Promise<Run[]> {
     const redis = await getRedis();

@@ -6,14 +6,18 @@ import { NotFoundError } from '../../domain/errors.js';
 
 /**
  * Registers Assistants-like HTTP controllers.
- * Routes are validated with Zod and mapped through presenters to match Assistants API shapes.
+ *
+ * Routes are validated with Zod and mapped through presenters to match
+ * Assistants API response shapes.
+ *
+ * @param app Fastify instance to register routes on
+ * @param deps Resolved application services
  */
 export function buildControllers(app: FastifyInstance, deps: {
   assistants: AssistantsService;
   threads: ThreadsService;
   runs: RunsService;
 }) {
-  // Assistants
   app.post('/v1/assistants', async (req, reply) => {
     const body = validate(AssistantCreateSchema, req.body ?? {});
     const assistant = await deps.assistants.create(body);
@@ -39,7 +43,6 @@ export function buildControllers(app: FastifyInstance, deps: {
     return reply.send(toAssistantResource(updated));
   });
 
-  // Threads
   app.post('/v1/threads', async (_req, reply) => {
     const t = await deps.threads.createThread();
     return reply.code(201).send(toThreadResource(t));
@@ -62,7 +65,6 @@ export function buildControllers(app: FastifyInstance, deps: {
     return reply.code(201).send(toMessageResource(msg));
   });
 
-  // Runs
   app.post('/v1/threads/:thread_id/runs', async (req, reply) => {
     const { thread_id } = req.params as { thread_id: string };
     const body = validate(RunCreateSchema, req.body ?? {});
@@ -79,8 +81,8 @@ export function buildControllers(app: FastifyInstance, deps: {
   });
 
   app.get('/v1/threads/:thread_id/runs/:run_id', async (req, reply) => {
-    const { run_id } = req.params as { thread_id: string; run_id: string };
-    const run = await deps.runs.requireRun(run_id);
+    const { thread_id, run_id } = req.params as { thread_id: string; run_id: string };
+    const run = await deps.runs.requireRunInThread(thread_id, run_id);
     return reply.send(toRunResource(run));
   });
 }

@@ -12,6 +12,7 @@
     "fastify",
     "typescript",
     "redis",
+    "azure-cosmos-db",
     "clean-architecture",
     "http-api",
     "compatibility-layer",
@@ -31,13 +32,14 @@
     "demo": "tsx demo/assistants-openai-test.ts"
   },
   "dependencies": {
+    "@azure/cosmos": "^4.5.1",
     "@fastify/cors": "^11.1.0",
     "dotenv": "^17.2.2",
     "fastify": "^5.6.0",
-    "openai": "^5.20.0",
+    "openai": "^5.20.1",
     "redis": "^4.7.1",
     "uuid": "^13.0.0",
-    "zod": "^3.23.8"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/node": "^24.3.1",
@@ -45,6 +47,6 @@
     "ts-node": "^10.9.2",
     "tsx": "^4.20.5",
     "typescript": "^5.9.2",
-    "vitest": "^2.1.9"
+    "vitest": "^3.2.4"
   }
 }

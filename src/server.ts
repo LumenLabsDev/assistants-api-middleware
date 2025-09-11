@@ -6,11 +6,14 @@ const logger = createLogger('server');
 
 const port = Number(process.env.PORT ?? 3500);
 
-/**
- * Boot the HTTP server and listen on configured port.
- */
+/** Boot the HTTP server and listen on configured port. */
 buildApp()
-  .then(app => app.listen({ port, host: '0.0.0.0' }))
+  .then(app => {
+    const provider = process.env.DATABASE_PROVIDER ?? 'redis';
+    logger.info('Database provider', { provider });
+    
+    return app.listen({ port, host: '0.0.0.0' });
+  })
   .then(addr => {
     logger.info('Server listening', { addr });
   })

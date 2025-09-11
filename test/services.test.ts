@@ -25,6 +25,20 @@ const hasRedis = Boolean(process.env.REDIS_URL);
     const run = await runs.createRun({ threadId: t.id, assistantId: a.id });
     expect(run.status === 'completed' || run.status === 'failed').toBe(true);
   });
+
+  it('getInThread returns null for mismatched thread, and run when matching', async () => {
+    const a = await assistants.create({ name: 'A2', model: 'gpt-4o' });
+    const t1 = await threads.createThread();
+    const t2 = await threads.createThread();
+    await threads.addMessage({ threadId: t1.id, role: 'user', content: 'Hi' });
+    const run = await runs.createRun({ threadId: t1.id, assistantId: a.id });
+
+    const wrong = await runs.getInThread(t2.id, run.id);
+    expect(wrong).toBeNull();
+
+    const correct = await runs.getInThread(t1.id, run.id);
+    expect(correct?.id).toBe(run.id);
+  });
 });
 
 

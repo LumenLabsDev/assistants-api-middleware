@@ -43,7 +43,11 @@ export interface MessagesRepository {
 export interface RunsRepository {
   create(run: Omit<Run, 'id' | 'createdAt'>): Promise<Run>;
   update(id: string, data: Partial<Run>): Promise<Run | null>;
+  /** Update a run by id within a specific thread partition (when available). */
+  updateInThread(threadId: string, id: string, data: Partial<Run>): Promise<Run | null>;
   get(id: string): Promise<Run | null>;
+  /** Retrieve a run by id within a specific thread partition (when available). */
+  getInThread(threadId: string, id: string): Promise<Run | null>;
   listByThread(threadId: string): Promise<Run[]>;
 }
 

@@ -64,7 +64,6 @@ export class RunsService {
    * Create a run for a thread and assistant, invoking the Responses client.
    */
   async createRun(params: RunCreateInput): Promise<Run> {
-    // Ensure thread exists at the use-case boundary
     const thread = await this.threads.get(params.threadId);
     if (!thread) throw new NotFoundError('thread_not_found');
 
@@ -93,15 +92,25 @@ export class RunsService {
       await this.runs.update(run.id, { status: 'failed', lastError: String(err?.message ?? err) });
     }
     const finalRun = await this.runs.get(run.id);
-    // finalRun can't be null here, but assert anyway
     return finalRun as Run;
   }
 
   async getRun(runId: string): Promise<Run | null> { return this.runs.get(runId); }
   async listRuns(threadId: string): Promise<Run[]> { return this.runs.listByThread(threadId); }
+  /** Partition-aware optional fetch; returns null when not found. */
+  async getInThread(threadId: string, runId: string): Promise<Run | null> {
+    return this.runs.getInThread(threadId, runId);
+  }
   /** Get a run or throw NotFoundError. */
   async requireRun(runId: string): Promise<Run> {
     const r = await this.runs.get(runId);
+    if (!r) throw new NotFoundError('run_not_found');
+    return r;
+  }
+
+  /** Partition-aware run fetch to avoid cross-partition queries where supported. */
+  async requireRunInThread(threadId: string, runId: string): Promise<Run> {
+    const r = await this.runs.getInThread(threadId, runId);
     if (!r) throw new NotFoundError('run_not_found');
     return r;
   }
