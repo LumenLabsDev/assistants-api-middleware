@@ -39,6 +39,32 @@ const hasRedis = Boolean(process.env.REDIS_URL);
     const correct = await runs.getInThread(t1.id, run.id);
     expect(correct?.id).toBe(run.id);
   });
+
+  it('deletes a single message in a thread', async () => {
+    const t = await threads.createThread();
+    const u1 = await threads.addMessage({ threadId: t.id, role: 'user', content: 'Hello' });
+    const a1 = await threads.addMessage({ threadId: t.id, role: 'assistant', content: 'Reply' });
+
+    let list = await threads.listMessages(t.id);
+    expect(list.map(m => m.id)).toEqual([u1.id, a1.id]);
+
+    await threads.deleteMessage(t.id, a1.id);
+
+    list = await threads.listMessages(t.id);
+    expect(list.map(m => m.id)).toEqual([u1.id]);
+  });
+
+  it('deletes assistant+preceding user pair', async () => {
+    const t = await threads.createThread();
+    const u1 = await threads.addMessage({ threadId: t.id, role: 'user', content: 'Q1' });
+    const a1 = await threads.addMessage({ threadId: t.id, role: 'assistant', content: 'A1' });
+
+    const result = await threads.deleteMessagePair(t.id, a1.id);
+    expect(result.deleted.sort()).toEqual([u1.id, a1.id].sort());
+
+    const list = await threads.listMessages(t.id);
+    expect(list.length).toBe(0);
+  });
 });
 
 

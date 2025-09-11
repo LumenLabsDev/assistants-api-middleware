@@ -82,6 +82,25 @@ export class RedisMessagesRepo implements MessagesRepository {
     return values.filter(Boolean).map(v => JSON.parse(v as string) as Message)
       .sort((a, b) => a.createdAt - b.createdAt);
   }
+  async deleteInThread(threadId: string, messageId: string): Promise<boolean> {
+    const redis = await getRedis();
+    await redis.multi()
+      .lRem(key.messagesByThread(threadId), 0, messageId)
+      .del(key.message(messageId))
+      .exec();
+    return true;
+  }
+  async deleteManyInThread(threadId: string, messageIds: string[]): Promise<number> {
+    if (messageIds.length === 0) return 0;
+    const redis = await getRedis();
+    const multi = redis.multi();
+    for (const id of messageIds) {
+      multi.lRem(key.messagesByThread(threadId), 0, id);
+      multi.del(key.message(id));
+    }
+    await multi.exec();
+    return messageIds.length;
+  }
 }
 
 export class RedisRunsRepo implements RunsRepository {

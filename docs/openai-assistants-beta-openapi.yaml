@@ -240,6 +240,49 @@ paths:
                     type: array
                     items: { $ref: '#/components/schemas/Message' }
                   has_more: { type: boolean }
+  /v1/threads/{thread_id}/messages/{message_id}:
+    delete:
+      operationId: deleteMessage
+      summary: Delete a message in a thread
+      description: Optionally cascade to delete the nearest preceding user message using `cascade=pair`.
+      parameters:
+        - name: thread_id
+          in: path
+          required: true
+          schema: { type: string }
+        - name: message_id
+          in: path
+          required: true
+          schema: { type: string }
+        - in: query
+          name: cascade
+          required: false
+          schema:
+            type: string
+            enum: [pair]
+          description: If 'pair', also delete the nearest preceding user message in the same thread.
+      responses:
+        '200':
+          description: Deletion result
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: object
+                    properties:
+                      id: { type: string }
+                      deleted: { type: boolean }
+                  - type: object
+                    properties:
+                      object: { type: string, example: list }
+                      data:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id: { type: string }
+                            deleted: { type: boolean }
+                      has_more: { type: boolean }
   /v1/threads/{thread_id}/runs:
     post:
       operationId: createRun

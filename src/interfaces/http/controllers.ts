@@ -65,6 +65,19 @@ export function buildControllers(app: FastifyInstance, deps: {
     return reply.code(201).send(toMessageResource(msg));
   });
 
+  app.delete('/v1/threads/:thread_id/messages/:message_id', async (req, reply) => {
+    const { thread_id, message_id } = req.params as { thread_id: string; message_id: string };
+    const cascade = (req.query as any)?.cascade as string | undefined;
+    await deps.threads.requireThread(thread_id);
+    if (cascade === 'pair') {
+      const result = await deps.threads.deleteMessagePair(thread_id, message_id);
+      return reply.send({ object: 'list', data: result.deleted.map(id => ({ id, deleted: true })), has_more: false });
+    } else {
+      await deps.threads.deleteMessage(thread_id, message_id);
+      return reply.send({ id: message_id, deleted: true });
+    }
+  });
+
   app.post('/v1/threads/:thread_id/runs', async (req, reply) => {
     const { thread_id } = req.params as { thread_id: string };
     const body = validate(RunCreateSchema, req.body ?? {});

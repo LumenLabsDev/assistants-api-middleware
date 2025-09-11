@@ -46,6 +46,33 @@ export class ThreadsService {
   }
   /** List messages for a thread in chronological order. */
   async listMessages(threadId: string): Promise<Message[]> { return this.messages.listByThread(threadId); }
+
+  /** Delete a single message in a thread (idempotent). */
+  async deleteMessage(threadId: string, messageId: string): Promise<boolean> {
+    await this.requireThread(threadId);
+    return this.messages.deleteInThread(threadId, messageId);
+  }
+
+  /**
+   * Delete an assistant message and its paired user message.
+   * Pairing heuristic: nearest preceding user message.
+   */
+  async deleteMessagePair(threadId: string, assistantMessageId: string): Promise<{ deleted: string[] }> {
+    await this.requireThread(threadId);
+    const messages = await this.messages.listByThread(threadId);
+    const idx = messages.findIndex(m => m.id === assistantMessageId);
+    if (idx === -1) return { deleted: [] };
+    const assistant = messages[idx];
+    // Find nearest preceding user message
+    let user: Message | undefined;
+    for (let i = idx - 1; i >= 0; i--) {
+      if (messages[i].role === 'user') { user = messages[i]; break; }
+    }
+    const idsToDelete = [assistant.id];
+    if (user) idsToDelete.push(user.id);
+    await this.messages.deleteManyInThread(threadId, idsToDelete);
+    return { deleted: idsToDelete };
+  }
 }
 
 /**

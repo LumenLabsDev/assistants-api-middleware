@@ -112,6 +112,31 @@ export class CosmosMessagesRepo implements MessagesRepository {
       .fetchAll();
     return resources;
   }
+  async deleteInThread(threadId: string, messageId: string): Promise<boolean> {
+    const container = await getContainer('messages');
+    try {
+      await container.item(messageId, threadId).delete();
+    } catch (error: any) {
+      if (error.code !== 404) throw error;
+    }
+    logger.debug('message.deleted', { id: messageId, threadId });
+    return true;
+  }
+  async deleteManyInThread(threadId: string, messageIds: string[]): Promise<number> {
+    if (messageIds.length === 0) return 0;
+    const container = await getContainer('messages');
+    let count = 0;
+    for (const id of messageIds) {
+      try {
+        await container.item(id, threadId).delete();
+        count++;
+      } catch (error: any) {
+        if (error.code !== 404) throw error;
+      }
+    }
+    logger.debug('messages.deleted_many', { count, threadId });
+    return count;
+  }
 }
 
 export class CosmosRunsRepo implements RunsRepository {

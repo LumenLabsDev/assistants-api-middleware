@@ -35,6 +35,10 @@ export interface ThreadsRepository {
 export interface MessagesRepository {
   add(message: Omit<Message, 'id' | 'createdAt'>): Promise<Message>;
   listByThread(threadId: string): Promise<Message[]>;
+  /** Delete a message by id within a specific thread. Returns true if deleted or not found (idempotent). */
+  deleteInThread(threadId: string, messageId: string): Promise<boolean>;
+  /** Delete multiple messages by id within a thread. Returns the number of deletions (idempotent). */
+  deleteManyInThread(threadId: string, messageIds: string[]): Promise<number>;
 }
 
 /**
